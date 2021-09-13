@@ -62,13 +62,15 @@ class AmazonProductInfo extends AmazonProductsCore
     public function setSKUs($s)
     {
         if (is_string($s)) {
-            $this->resetASINs();
             $this->resetSKUs();
+            $this->resetASINs();
+            $this->resetASIN();
             $this->options['SellerSKUList.SellerSKU.1'] = $s;
         } else {
             if (is_array($s)) {
-                $this->resetASINs();
                 $this->resetSKUs();
+                $this->resetASINs();
+                $this->resetASIN();
                 $i = 1;
                 foreach ($s as $x) {
                     $this->options['SellerSKUList.SellerSKU.'.$i] = $x;
@@ -111,11 +113,13 @@ class AmazonProductInfo extends AmazonProductsCore
         if (is_string($s)) {
             $this->resetSKUs();
             $this->resetASINs();
+            $this->resetASIN();
             $this->options['ASINList.ASIN.1'] = $s;
         } else {
             if (is_array($s)) {
                 $this->resetSKUs();
                 $this->resetASINs();
+                $this->resetASIN();
                 $i = 1;
                 foreach ($s as $x) {
                     $this->options['ASINList.ASIN.'.$i] = $x;
@@ -137,6 +141,46 @@ class AmazonProductInfo extends AmazonProductsCore
     {
         foreach ($this->options as $op => $junk) {
             if (preg_match('#ASINList#', $op)) {
+                unset($this->options[$op]);
+            }
+        }
+    }
+
+    /**
+     * Sets the ASIN. (Required*).
+     *
+     * This method sets ASIN to be sent in the next request.
+     * Setting this parameter tells Amazon to only return inventory supplies that match
+     * the ID. If this parameter is set, Seller SKUs & ASINS cannot be set.
+     *
+     * @param string $s <p>A single ASIN string. (max: 1)</p>
+     *
+     * @return bool <b>FALSE</b> if improper input
+     */
+    public function setASIN($s)
+    {
+
+        if (is_string($s)) {
+            $this->resetSKUs();
+            $this->resetASINs();
+            $this->resetASIN();
+            $this->options['ASIN'] = $s;
+            return true;
+        } 
+                  
+        return false;
+    }
+
+    /**
+     * Resets the ASIN option.
+     *
+     * Since ASIN is a required parameter, these option should not be removed
+     * without replacing them, so this method is not public.
+     */
+    private function resetASIN()
+    {
+        foreach ($this->options as $op => $junk) {
+            if (preg_match('#ASIN#', $op)) {
                 unset($this->options[$op]);
             }
         }
@@ -246,6 +290,7 @@ class AmazonProductInfo extends AmazonProductsCore
         if (array_key_exists('SellerSKUList.SellerSKU.1', $this->options)) {
             $this->options['Action'] = 'GetCompetitivePricingForSKU';
             $this->resetASINs();
+            $this->resetASIN();
         } else {
             if (array_key_exists('ASINList.ASIN.1', $this->options)) {
                 $this->options['Action'] = 'GetCompetitivePricingForASIN';
@@ -311,6 +356,7 @@ class AmazonProductInfo extends AmazonProductsCore
         if (array_key_exists('SellerSKUList.SellerSKU.1', $this->options)) {
             $this->options['Action'] = 'GetLowestOfferListingsForSKU';
             $this->resetASINs();
+            $this->resetASIN();
         } else {
             if (array_key_exists('ASINList.ASIN.1', $this->options)) {
                 $this->options['Action'] = 'GetLowestOfferListingsForASIN';
@@ -379,6 +425,7 @@ class AmazonProductInfo extends AmazonProductsCore
         if (array_key_exists('SellerSKUList.SellerSKU.1', $this->options)) {
             $this->options['Action'] = 'GetMyPriceForSKU';
             $this->resetASINs();
+            $this->resetASIN();
         } else {
             if (array_key_exists('ASINList.ASIN.1', $this->options)) {
                 $this->options['Action'] = 'GetMyPriceForASIN';
@@ -449,6 +496,7 @@ class AmazonProductInfo extends AmazonProductsCore
         if (array_key_exists('SellerSKUList.SellerSKU.1', $this->options)) {
             $this->options['Action'] = 'GetProductCategoriesForSKU';
             $this->resetASINs();
+            $this->resetASIN();
         } else {
             if (array_key_exists('ASINList.ASIN.1', $this->options)) {
                 $this->options['Action'] = 'GetProductCategoriesForASIN';
@@ -514,6 +562,84 @@ class AmazonProductInfo extends AmazonProductsCore
         if (array_key_exists('ASINList.ASIN.1', $this->options)) {
             $this->options['Action'] = 'GetMatchingProduct';
             $this->resetSKUs();
+        }
+    }
+
+
+
+    /**
+     * Fetches a match of lowest priced offers on product from Amazon.
+     *
+     * Submits a <i>GetLowestPricedOffersForASIN</i>
+     * or <i>GetLowestPricedOffersForASIN</i> request to Amazon. Amazon will send
+     * the match back as a response, which can be retrieved using <i>getProduct</i>.
+     *
+     * @return bool <b>FALSE</b> if something goes wrong
+     */
+    public function fetchLowestPricedOffers()
+    {
+        if (
+            ! array_key_exists('SellerSKUList.SellerSKU.1', $this->options) 
+            && ! array_key_exists(
+                'ASINList.ASIN.1',
+                $this->options
+            )
+            && ! array_key_exists(
+                'ASIN',
+                $this->options
+            )
+        ) {
+            $this->log('Product IDs must be set in order to look them up!', 'Warning');
+
+            return false;
+        }
+
+        $this->prepareLowestPricedOffers();
+
+        $url = $this->urlbase.$this->urlbranch;
+
+        $query = $this->genQuery();
+    
+        if ($this->mockMode) {
+            $xml = $this->fetchMockFile();
+        } else {
+
+            $response = $this->sendRequest($url, ['Post' => $query]);
+         
+            if (! $this->checkResponse($response)) {
+                return false;
+            }
+
+            $xml = simplexml_load_string($response['body']);
+        }
+
+        $this->parseXML($xml);
+    }
+
+    /**
+     * Sets up options for using <i>fetchLowestPricedOffers</i>.
+     *
+     * This changes key options for using <i>fetchLowestPricedOffers</i>.
+     */
+    protected function prepareLowestPricedOffers()
+    {
+        include $this->env;
+        
+        if (isset($THROTTLE_TIME_PRODUCTPRICE)) {
+            $this->throttleTime = $THROTTLE_TIME_PRODUCTPRICE;
+        }
+
+        $this->throttleGroup = 'GetLowestPricedOffers';
+
+        if (array_key_exists('SellerSKUList.SellerSKU.1', $this->options)) {
+            $this->options['Action'] = 'GetLowestPricedOffersForSKU';
+            $this->resetASINs();
+            $this->resetASIN();
+        } else {
+            if (array_key_exists('ASIN', $this->options)) {
+                $this->options['Action'] = 'GetLowestPricedOffersForASIN';
+                $this->resetSKUs();
+            }
         }
     }
 }
