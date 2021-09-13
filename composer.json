@@ -1,12 +1,12 @@
 {
-    "name": "keithbrink/amazon-mws-laravel",
+    "name": "satishsinghdevbha/amazon-mws-laravel",
     "description": "A Laravel library for Amazon's MWS web services, supporting Laravel 5-7+",
     "license": "Apache-2.0",
     "keywords": ["API", "Amazon", "PHP", "MWS", "Laravel"],
     "authors": [
         {
-            "name": "Keith Brink",
-            "email": "keith.brink@gmail.com"
+            "name": "Satish Singh Devbha",
+            "email": "satishsinghdevbha@gmail.com"
         }
     ],
     "require": {
