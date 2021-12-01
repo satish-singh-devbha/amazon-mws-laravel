@@ -2,9 +2,9 @@
 
 namespace KeithBrink\AmazonMws;
 
-use Config;
-use Exception;
 use Log;
+use Exception;
+use Config;
 
 /**
  * Copyright 2013 CPI Group, LLC.
@@ -638,7 +638,7 @@ abstract class AmazonCore
      */
     protected function sendRequest($url, $param)
     {
-        $this->log('Making request to Amazon: '.$this->options['Action']);
+        //$this->log('Making request to Amazon: '.$this->options['Action']);
         $this->throttleCount = 0;
         $response = $this->fetchURL($url, $param);
 

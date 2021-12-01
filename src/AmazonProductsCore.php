@@ -88,7 +88,7 @@ abstract class AmazonProductsCore extends AmazonCore
                 $attributes['@attributes'] = [];
             }
             if (isset($attributes['@attributes']['status']) && $attributes['@attributes']['status'] != 'Success') {
-                $this->log('Warning: product return was not successful', 'Warning');
+                //$this->log('Warning: product return was not successful', 'Warning');
             }
             if (isset($x->Products)) {
                 foreach ($x->Products->children() as $z) {
@@ -119,7 +119,7 @@ abstract class AmazonProductsCore extends AmazonCore
                             $this->log("Product Error: $error", 'Warning');
                         } elseif ($z->getName() != 'Product') {
                             $this->productList[$z->getName()] = (string) $z;
-                            $this->log('Special case: '.$z->getName(), 'Warning');
+                            //$this->log('Special case: '.$z->getName(), 'Warning');
                         } else {
                             $this->productList[$this->index] = new AmazonProduct(
                                 $this->storeName,
